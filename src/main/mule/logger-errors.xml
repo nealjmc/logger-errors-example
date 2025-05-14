@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp" xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
+http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="5f6a1dfb-fd5d-48d2-b7c8-777663d614be" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<json-logger:config name="JSON_Logger_Config" doc:name="JSON Logger Config" doc:id="000b56fc-8fa3-4a20-b792-355180dfd902" applicationName="logger-errors" applicationVersion="1.0.0" environment="local" />
+	<flow name="logger-errorsFlow" doc:id="7b8940b4-14ed-4ddc-aabd-4735012a3207" >
+		<http:listener doc:name="Listener" doc:id="ade4f85a-7f40-47d0-afd6-cdf906f0eba1" config-ref="HTTP_Listener_config" path="/"/>
+		<until-successful maxRetries="1" doc:name="Until Successful" doc:id="33d4d124-bb71-48e8-bb1a-d03d9ed55a5f" millisBetweenRetries="1000">
+			<raise-error doc:name="Raise error" doc:id="a3b23775-6a24-4c1d-81fb-05172758a094" type="SELF:CUSTOM" description="Foo bar"/>
+		</until-successful>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="4e43e32c-4aa2-4596-92fc-a6fa15d9c51c" >
+				<logger level="INFO" doc:name="Logger" doc:id="a05e8e69-79bc-4b36-9d54-92359b6ad5f2" message="#[{error: error}]"/>
+				<json-logger:logger doc:id="daafe751-d714-4f38-b512-17180e8f4792" doc:name="Log error" config-ref="JSON_Logger_Config" message="JSON Logger">
+					<json-logger:content ><![CDATA[#[output application/json ---
+{
+    error:error
+}]]]></json-logger:content>
+				</json-logger:logger>
+			</on-error-continue>
+		</error-handler>
+	</flow>
+</mule>
